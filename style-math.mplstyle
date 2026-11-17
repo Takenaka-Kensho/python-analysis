@@ -1,0 +1,21 @@
+figure.figsize : 8.0, 6.0
+figure.dpi : 200
+axes.formatter.limits: -3, 4
+axes.formatter.use_mathtext: True
+axes.grid : False
+axes.linewidth : 1.2
+font.size : 20
+font.family : Noto Sans CJK JP
+mathtext.fontset : stix
+xtick.direction : in
+ytick.direction : in
+xtick.major.size : 5.0
+ytick.major.size : 5.0
+xtick.major.width : 1.2
+ytick.major.width : 1.2
+xtick.labelsize : 20
+ytick.labelsize : 20
+legend.fancybox : False
+legend.framealpha : 1
+legend.edgecolor : black
+legend.fontsize : 16
