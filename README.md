@@ -1,47 +1,48 @@
-# 2026/11/11 revision
-# written by takenaka
-
-### 概要
+## 概要
 PS上で動かせるPython解析コード．
-コードが入ったディレクトリごとrunファイルと同じ階層に置き(###ディレクトリ構造 参照)，
-$ python *****.py
+
+コードが入ったディレクトリごとrunファイルと同じ階層に置き(「ディレクトリ構造」参照)、
+```python *****.py```
 などで各コードを実行する．
 
 [追記] 2026/04現在、pip installでインストールされるPythonのバージョンと
        実行コマンドpythonで実行されるPythonのバージョンが異なる。
-       python3.12 @@@.py
+       ```python3.12 @@@.py```
        などにより3.12環境で実行することを推奨
 
-### 必要なモジュール
+## 必要なモジュール
 - 標準搭載のモジュール(numpy, matplotlib, pandas, scipyなど)
-- f90nml (Fortranのネームリストの読み込みに使用)
-    -> フロントエンドで $ pip install f90nml
-- tqdm (プログレスバーの可視化)
-    -> フロントエンドで $ pip install tqdm
-- imageio (コンター図から動画をつくる際に必要)
-    -> $ pip install imageio
-    -> 加えて，mp4の書き出し処理の問題で $ pip install imageio[ffmpeg] も実行しておく．
-- zarr (必要に応じて。Python 3.12以降でインストール)
-    -> compress_data.pyに必須
+- f90nml (Fortranのネームリストの読み込みに使用)\
+    -> フロントエンドで `pip install f90nml`
+- tqdm (プログレスバーの可視化)\
+    -> フロントエンドで `pip install tqdm`
+- imageio (コンター図から動画をつくる際に必要)\
+    -> `pip install imageio`\
+    -> 加えて，mp4の書き出し処理の問題で `pip install imageio[ffmpeg]` も実行しておく．
+- zarr (必要に応じて。Python 3.12以降でインストール)\
+    -> compress_data.pyに必須\
     -> mode_contour.py, dmd.pyで使用可能(任意)
 
-### ディレクトリ構造
+## ディレクトリ構造
+
+```
 .
 ├──GKNET.dataなど
 ├──phi
 ├──apl
-└──解析用ディレクトリ(名前は任意)/
+└──解析用ディレクトリ(名前は任意)
     ├──phi (mode_contourの出力)
     ├──apl (mode_contourの出力)
     ├──style-math.mplstyle
     └──各実行ファイル
+```
 
-### 注意点
+## 注意点
 - GKNET.dataに日本語コメントを使用しないこと(f90nmlでエラーが出ます)
 - WinSCPの設定でテキストエディタをVScodeなどに変更しておくことを強く推奨
 - compress_data.pyは4プロセスのMPIを想定。compress_data.shから実行
 
-### 各実行ファイルの説明
+## 各実行ファイルの説明
 - energy_time.py     : 静電エネルギーの時間発展をプロット
 - dispersion.py      : nとmに対する分散関係をプロット
 - mode_contour.py    : コンター図を作成
@@ -52,7 +53,7 @@ $ python *****.py
 - compress_data.py   : ポテンシャルデータの圧縮(保存、処理の高速化が目的)
 - nonlinear.py       : 非線形計算の解析用
 
-### mplstyleファイルについて
+## mplstyleファイルについて
 matplotlibで使用するスタイルをmplstyleファイルにまとめており，
 基本的には実行ファイル内でこのスタイルシートが参照される．
 好みに応じて本ファイルを書き変えるとよいが，
@@ -70,7 +71,7 @@ PS上でデフォルト設定で使用できるフォント例を以下に記載
 - P052
 - Z003
 
-### 主な変更ログ(詳細は各コードファイルに記載)
+## 主な変更ログ(詳細は各コードファイルに記載)
 - 作成したコンター図をもとに動画を作成するコードを実装(imgs2movie.py)
 - それに伴い，必要なモジュールにimageioを追加
 - 分散関係をデータ出力するパートを追加，成長率や周波数が小さいときに出力できないバグを解消
