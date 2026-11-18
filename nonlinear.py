@@ -9,6 +9,22 @@ except: pass
 import read_gknet_nml
 
 """
+nonlinear.py
+
+***EXPLANATION***
+- flux & diffusion coefficient analysis for nonlinear calculation
+- detail explanation is written below (in japanese)
+
+***VERSION***
+v1.0 (2026/11)
+- prototype
+- ((effective/conductive) energy/particle) flux/diffusion-coefficient, 1d/2d plot 
+- estimate initial saturation time
+v1.1 (2026/11)
+- modify species' color
+- add es/em comparing plot
+
+***詳しい説明***
 ■ GKNET側の出力について[GKNET260723 ~ 260928]
 *バージョンにより大幅に変わるので注意*
 (1) モーメント量の定義
@@ -87,6 +103,11 @@ class NonlinearTransport():
         GT_es   = np.reshape(data[:,10], (-1, nx))
         GT_em   = np.reshape(data[:,11], (-1, nx))
         G0      = np.reshape(data[:,12], (-1, nx))
+
+        self.QT_es = QT_es
+        self.QT_em = QT_em
+        self.GT_es = GT_es
+        self.GT_em = GT_em
 
         # chi_turb = np.reshape(data[:,13], (-1, nx))
         # D_turb   = np.reshape(data[:,14], (-1, nx))
@@ -205,7 +226,7 @@ class NonlinearTransport():
         self.Q_cond_aavs, self.Q_cond_stds, mid_idx = self.avg_std(self.Q_cond)
         print(f'{"saturation point (Q_cond)":<28} : x = {self.x[mid_idx]:.2f}')
         return
-
+    
 
     def calc_coeff(self):
         T_div = np.gradient(self.T, self.x, axis=1) * (self.g_xx_up[None,:])**0.5
@@ -349,6 +370,40 @@ class NonlinearTransport():
     
 
 ################################################################################
+def compare_es_em(nl_cls:list[NonlinearTransport], root:str):
+    fig = plt.figure()
+    axes:list[plt.Axes] = fig.subplots(2,1)
+    clrs = ['m', 'gold']
+    lss  = ['solid', 'dashed']
+    alpha = 0.2
+
+    for nl,ax in zip(nl_cls,axes):
+        Q_es_aavs, Q_es_stds, mid_es_idx = nl.avg_std(nl.QT_es * (nl.n_rat*nl.T_rat))
+        Q_em_aavs, Q_em_stds, mid_em_idx = nl.avg_std(nl.QT_em * (nl.n_rat*nl.T_rat))
+
+        # for ES plot
+        ax.plot(nl.t, Q_es_aavs, color=clrs[0], lw=1.5, ls=lss[0], label='ES', zorder=1)
+        ax.fill_between(nl.t, y1=(Q_es_aavs - Q_es_stds), y2=(Q_es_aavs + Q_es_stds), color=clrs[0], alpha=alpha, lw=0.0, zorder=-1)
+
+        # for EM plot
+        ax.plot(nl.t, Q_em_aavs, color=clrs[1], lw=1.5, ls=lss[1], label='EM', zorder=1)
+        ax.fill_between(nl.t, y1=(Q_em_aavs - Q_em_stds), y2=(Q_em_aavs + Q_em_stds), color=clrs[1], alpha=alpha, lw=0.0, zorder=-1)
+
+    axes[0].set_title('Electron')
+    axes[1].set_title('Ion')
+
+    for ax in axes:
+        ax.axhline(y=0.0, color='dimgray', lw=1.0, zorder=-1)
+        ax.set_xlim(0, nl.t[-1])
+        ax.set_xlim(0, nl.t[-1])
+        ax.legend()
+
+    fig.tight_layout(pad=0.2)
+    fig.savefig(f'{root}/compare_es_em.png', dpi=200)
+
+    plt.close()
+    return
+
 
 def plot_flux(nl_ele:NonlinearTransport, nl_ion:NonlinearTransport, root:str,
               is_plot_satu_time=False, is_plot_std:bool=True, is_plot_cond:bool=False):
@@ -374,14 +429,14 @@ def plot_flux(nl_ele:NonlinearTransport, nl_ion:NonlinearTransport, root:str,
     axes:list[plt.Axes] = fig.subplots(2,1)
 
     alpha = 0.2
-    nl_ele.plot_1d_tp(axes[0], mode=0, tname='Electron', clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-    nl_ion.plot_1d_tp(axes[0], mode=0, tname='Ion'     , clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
-    nl_ele.plot_1d_tp(axes[1], mode=1, tname='Electron', clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-    nl_ion.plot_1d_tp(axes[1], mode=1, tname='Ion'     , clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ele.plot_1d_tp(axes[0], mode=0, tname='Electron', clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ion.plot_1d_tp(axes[0], mode=0, tname='Ion'     , clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
+    nl_ele.plot_1d_tp(axes[1], mode=1, tname='Electron', clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ion.plot_1d_tp(axes[1], mode=1, tname='Ion'     , clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
 
     if is_plot_cond:
-        nl_ele.plot_1d_tp(axes[0], mode=4, tname='Electron', clr='darkorange', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-        nl_ion.plot_1d_tp(axes[0], mode=4, tname='Ion'     , clr='darkturquoise', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+        nl_ele.plot_1d_tp(axes[0], mode=4, tname='Electron', clr='darkturquoise', ls='dotted' , alpha=alpha, is_plot_std=is_plot_std)
+        nl_ion.plot_1d_tp(axes[0], mode=4, tname='Ion'     , clr='darkorange'   , ls='solid'  , alpha=alpha, is_plot_std=is_plot_std)
 
     if is_plot_satu_time:
         # plot saturation time based on electron data
@@ -428,14 +483,14 @@ def plot_diff_coeff(nl_ele:NonlinearTransport, nl_ion:NonlinearTransport, root:s
     fig = plt.figure(figsize=(10,9))
     axes:list[plt.Axes] = fig.subplots(2,1)
     alpha = 0.2
-    nl_ele.plot_1d_tp(axes[0], mode=2, tname='Electron', clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-    nl_ion.plot_1d_tp(axes[0], mode=2, tname='Ion'     , clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
-    nl_ele.plot_1d_tp(axes[1], mode=3, tname='Electron', clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-    nl_ion.plot_1d_tp(axes[1], mode=3, tname='Ion'     , clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ele.plot_1d_tp(axes[0], mode=2, tname='Electron', clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ion.plot_1d_tp(axes[0], mode=2, tname='Ion'     , clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
+    nl_ele.plot_1d_tp(axes[1], mode=3, tname='Electron', clr='b', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+    nl_ion.plot_1d_tp(axes[1], mode=3, tname='Ion'     , clr='r', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
 
     if is_plot_cond:
-        nl_ele.plot_1d_tp(axes[0], mode=5, tname='Electron', clr='darkorange', ls='solid' , alpha=alpha, is_plot_std=is_plot_std)
-        nl_ion.plot_1d_tp(axes[0], mode=5, tname='Ion'     , clr='darkturquoise', ls='dotted', alpha=alpha, is_plot_std=is_plot_std)
+        nl_ele.plot_1d_tp(axes[0], mode=5, tname='Electron', clr='darkturquoise', ls='dotted' , alpha=alpha, is_plot_std=is_plot_std)
+        nl_ion.plot_1d_tp(axes[0], mode=5, tname='Ion'     , clr='darkorange'   , ls='solid'  , alpha=alpha, is_plot_std=is_plot_std)
 
     if is_plot_satu_time:
         # plot saturation time based on electron data
@@ -519,16 +574,19 @@ def main():
 
     # --- Make instance --------------------------------------------------------
     nl_ele = NonlinearTransport(nml, path='../T0.txt', nx=nx, ns=0, exclude_zonal=False)
-    nl_ele.calc_flux()
+    nl_ele.calc_flux()  # calc flux & diffusion coefficient
 
     nl_ion = NonlinearTransport(nml, path='../T1.txt', nx=nx, ns=1, exclude_zonal=False)
-    nl_ion.calc_flux()
+    nl_ion.calc_flux()  # calc flux & diffusion coefficient
 
     # --- Plot flux ------------------------------------------------------------
     plot_flux(nl_ele, nl_ion, root, is_plot_satu_time=True, is_plot_std=True)
 
     # --- Plot diffusion coefficient -------------------------------------------
     plot_diff_coeff(nl_ele, nl_ion, root, is_plot_satu_time=True, is_plot_std=True)
+
+    # --- Compare es/em --------------------------------------------------------
+    compare_es_em([nl_ele, nl_ion], root)
 
     return None
 
